@@ -1,51 +1,51 @@
-interface KontrolKatalogProps {
-  cari: string;
-  setCari: (val: string) => void;
-  kategori: string;
-  setKategori: (val: string) => void;
+import type { Saringan } from "@/data/saring";
+
+type Props = {
+  s?: Saringan;
   daftarKategori: string[];
-  urut: string;
-  setUrut: (val: string) => void;
-  handleUrutChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  hanyaAdaTiket: boolean;
-  setHanyaAdaTiket: (val: boolean) => void;
-  hargaMaks: string;
-  setHargaMaks: (val: string) => void;
-}
+};
 
 export default function KontrolKatalog({
-  cari,
-  setCari,
-  kategori,
-  setKategori,
+  s,
   daftarKategori,
-  urut,
-  handleUrutChange,
-  hanyaAdaTiket,
-  setHanyaAdaTiket,
-  hargaMaks,
-  setHargaMaks,
-}: KontrolKatalogProps) {
+}: Props) {
+  const filter = s ?? {
+    cari: "",
+    kategori: "Semua",
+    urut: "tanggal",
+    sisa: false,
+    max: null,
+  };
+
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-3">
+    <form
+      action="/event"
+      method="GET"
+      className="mb-4 flex flex-wrap items-center gap-3"
+    >
       <input
-        value={cari}
-        onChange={(e) => setCari(e.target.value)}
-        placeholder="Cari event..."
+        type="text"
+        name="cari"
+        defaultValue={filter.cari}
+        placeholder="Cari event ..."
         className="rounded border bg-white px-3 py-2"
       />
+
       <select
-        value={kategori}
-        onChange={(e) => setKategori(e.target.value)}
+        name="kategori"
+        defaultValue={filter.kategori}
         className="rounded border bg-white px-3 py-2"
       >
         {daftarKategori.map((k) => (
-          <option key={k}>{k}</option>
+          <option key={k} value={k}>
+            {k}
+          </option>
         ))}
       </select>
+
       <select
-        value={urut}
-        onChange={handleUrutChange}
+        name="urut"
+        defaultValue={filter.urut}
         className="rounded border bg-white px-3 py-2"
       >
         <option value="tanggal">Tanggal terdekat</option>
@@ -57,19 +57,28 @@ export default function KontrolKatalog({
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={hanyaAdaTiket}
-          onChange={(e) => setHanyaAdaTiket(e.target.checked)}
+          name="sisa"
+          value="1"
+          defaultChecked={filter.sisa}
         />
         Hanya yang masih ada tiket
       </label>
 
       <input
         type="number"
-        value={hargaMaks}
-        onChange={(e) => setHargaMaks(e.target.value)}
-        placeholder="Harga maksimal..."
-        className="rounded border bg-white px-3 py-2 text-sm"
+        name="max"
+        min="0"
+        defaultValue={filter.max ?? ""}
+        placeholder="Harga maksimal"
+        className="w-40 rounded border bg-white px-3 py-2"
       />
-    </div>
+
+      <button
+        type="submit"
+        className="rounded bg-blue-600 px-4 py-2 text-white"
+      >
+        Terapkan
+      </button>
+    </form>
   );
 }
