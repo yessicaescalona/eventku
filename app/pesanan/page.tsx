@@ -1,79 +1,123 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { pesanan } from "@/data/pesanan";
+import Link from "next/link";
+
+import { ambilPesanan } from "@/data/ambil";
 import { rupiah } from "@/data/events";
-import { batalkanPesanan } from "@/app/actions"; // <-- 1. Impor batalkanPesanan dari actions
+import { batalkanPesanan } from "@/app/actions";
+
+export const metadata: Metadata = {
+  title: "Daftar Pesanan",
+};
 
 export default async function HalamanPesanan() {
-  const totalTiket = pesanan.reduce((t, p) => t + p.jumlah, 0);
-  const pendapatan = pesanan.reduce((t, p) => t + p.total, 0);
-  
-  // Membaca cookie nama
-  const namaCookie = (await cookies()).get("nama")?.value ?? "";
+  const pesanan = await ambilPesanan();
+
+  const namaSaya =
+    (await cookies()).get("nama")?.value ?? "";
+
+  const totalTiket = pesanan.reduce(
+    (total, p) => total + p.jumlah,
+    0
+  );
+
+  const pendapatan = pesanan.reduce(
+    (total, p) => total + p.total,
+    0
+  );
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold">Daftar Pesanan</h1>
-      
-      {/* Tampilkan sapaan jika cookie nama ada */}
-      {namaCookie && (
-        <p className="mb-4 text-slate-700">
-          Halo, <b>{namaCookie}</b>! Pesananmu ditandai &quot;Kamu&quot;.
+      <h1 className="mb-2 text-2xl font-bold">
+        Daftar Pesanan
+      </h1>
+
+      {namaSaya && (
+        <p className="mb-2 text-slate-600">
+          Halo, {namaSaya}! Pesananmu ditandai &quot;Kamu&quot;.
         </p>
       )}
 
       {pesanan.length === 0 ? (
         <p className="text-slate-500">
-          Belum ada pesanan. <Link href="/event" className="text-blue-600 underline">Pilih event</Link>
+          Belum ada pesanan.{" "}
+          <Link
+            href="/event"
+            className="text-blue-600 underline"
+          >
+            Pilih event
+          </Link>
         </p>
       ) : (
         <>
           <p className="mb-3 text-sm text-slate-500">
-            {pesanan.length} pesanan · {totalTiket} tiket · pendapatan {rupiah(pendapatan)}
+            {pesanan.length} pesanan · {totalTiket} tiket ·
+            pendapatan {rupiah(pendapatan)}
           </p>
-          <table className="w-full rounded-xl border bg-white text-sm">
-            <thead className="bg-slate-100 text-left">
-              <tr>
-                <th className="p-2">#</th>
-                <th className="p-2">Event</th>
-                <th className="p-2">Pemesan</th>
-                <th className="p-2">Tiket</th>
-                <th className="p-2">Total</th>
-                <th className="p-2">Aksi</th> {/* <-- 2. Tambah header kolom aksi */}
-              </tr>
-            </thead>
-            <tbody>
-              {pesanan.map((p) => {
-                const milikKamu = namaCookie && p.nama.toLowerCase() === namaCookie.toLowerCase();
-                return (
+
+          <div className="overflow-x-auto">
+            <table className="w-full rounded-xl border bg-white text-sm">
+              <thead className="bg-slate-100 text-left">
+                <tr>
+                  <th className="p-2">#</th>
+                  <th className="p-2">Event</th>
+                  <th className="p-2">Pemesan</th>
+                  <th className="p-2">Tiket</th>
+                  <th className="p-2">Total</th>
+                  <th className="p-2">Waktu Pemesanan</th>
+                  <th className="p-2"></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {pesanan.map((p) => (
                   <tr key={p.nomor} className="border-t">
                     <td className="p-2">{p.nomor}</td>
-                    <td className="p-2">{p.judul}</td>
+
                     <td className="p-2">
-                      {p.nama}{" "}
-                      {milikKamu && (
-                        <span className="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                      {p.events?.judul ?? "(event dihapus)"}
+                    </td>
+
+                    <td className="p-2">
+                      {p.nama}
+
+                      {p.nama === namaSaya && (
+                        <span className="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">
                           Kamu
                         </span>
                       )}
                     </td>
+
                     <td className="p-2">{p.jumlah}</td>
-                    <td className="p-2">{rupiah(p.total)}</td>
-                    
-                    {/* <-- 3. Tambah kolom form tombol batalkan hanya jika milik Kamu */}
+
                     <td className="p-2">
-                      {milikKamu && (
+                      {rupiah(p.total)}
+                    </td>
+
+                    <td className="p-2 whitespace-nowrap">
+                      {new Date(p.dibuat).toLocaleString("id-ID")}
+                    </td>
+
+                    <td className="p-2">
+                      {p.nama === namaSaya && (
                         <form action={batalkanPesanan}>
-                          <input type="hidden" name="nomor" value={p.nomor} />
-                          <button className="text-red-600 underline">Batalkan</button>
+                          <input
+                            type="hidden"
+                            name="nomor"
+                            value={p.nomor}
+                          />
+
+                          <button className="text-red-600 underline">
+                            Batalkan
+                          </button>
                         </form>
                       )}
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>
